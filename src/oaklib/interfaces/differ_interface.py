@@ -17,6 +17,7 @@ from oaklib.datamodels.vocabulary import (
     DEPRECATED_PREDICATE,
     HAS_OBSOLESCENCE_REASON,
     OWL_CLASS,
+    OWL_OBJECT_PROPERTY,
     TERM_REPLACED_BY,
     TERMS_MERGED,
 )
@@ -72,15 +73,27 @@ class DifferInterface(BasicOntologyInterface, ABC):
         """
         if configuration is None:
             configuration = DiffConfiguration()
-        other_ontology_entities = set(list(other_ontology.entities(filter_obsoletes=False)))
+        # Check for Node deletion / obsoletion
+        other_ontology_entities = set(
+            list(other_ontology.entities(filter_obsoletes=False))
+        )
         self_entities = set(list(self.entities(filter_obsoletes=False)))
         logging.info(f"Comparing {len(self_entities)} terms in this ontology")
         for e1 in self_entities:
-            # e1_types = self.owl_type(e1)
-            # is_class = OWL_CLASS in e1_types
             logging.debug(f"Comparing e1 {e1}")
             if e1 not in other_ontology_entities:
-                yield NodeDeletion(id=_gen_id(), about_node=e1)
+                e1_types = self.owl_type(e1)
+                is_class = OWL_CLASS in e1_types
+                is_property = OWL_OBJECT_PROPERTY in e1_types
+                if is_class:
+                    yield kgcl.ClassDeletion(id=_gen_id(), about_node=e1)
+                elif is_property:
+                    yield kgcl.ObjectPropertyDeletion(id=_gen_id(), about_node=e1)
+                else:
+                    yield NodeDeletion(
+                        id=_gen_id(), about_node=e1, change_description=e1_types
+                    )  # about_node=e1
+                # yield NodeDeletion(id=_gen_id(), about_node=e1)
                 continue
             if configuration.simple:
                 continue
@@ -96,17 +109,23 @@ class DifferInterface(BasicOntologyInterface, ABC):
                         yield kgcl.NodeUnobsoletion(id=_gen_id(), about_node=e1)
                     elif not e1_dep and e2_dep:
                         if TERM_REPLACED_BY in e2_metadata:
-                            if TERMS_MERGED in e2_metadata.get(HAS_OBSOLESCENCE_REASON, []):
+                            if TERMS_MERGED in e2_metadata.get(
+                                HAS_OBSOLESCENCE_REASON, []
+                            ):
                                 yield kgcl.NodeDirectMerge(
                                     id=_gen_id(),
                                     about_node=e1,
-                                    has_direct_replacement=e2_metadata[TERM_REPLACED_BY][0],
+                                    has_direct_replacement=e2_metadata[
+                                        TERM_REPLACED_BY
+                                    ][0],
                                 )
                             else:
                                 yield kgcl.NodeObsoletionWithDirectReplacement(
                                     id=_gen_id(),
                                     about_node=e1,
-                                    has_direct_replacement=e2_metadata[TERM_REPLACED_BY][0],
+                                    has_direct_replacement=e2_metadata[
+                                        TERM_REPLACED_BY
+                                    ][0],
                                 )
                         else:
                             yield kgcl.NodeObsoletion(id=_gen_id(), about_node=e1)
