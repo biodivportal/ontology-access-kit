@@ -241,6 +241,7 @@ class DifferInterface(BasicOntologyInterface, ABC):
                             change_1={"NodeRename": kgcl_NodeRename.id},
                             change_2={"NewSynonym": kgcl_NewSynonym.id},
                         )
+            # Chunk for changes about edge
             e1_rels = set(self.outgoing_relationships(e1))
             e2_rels = set(other_ontology.outgoing_relationships(e1))
             for rel in e1_rels.difference(e2_rels):
@@ -251,15 +252,40 @@ class DifferInterface(BasicOntologyInterface, ABC):
                     e2_rels = set([x for x in e2_rels if x[1] != filler])
                     if pred != switches[0]:
                         yield kgcl.PredicateChange(
-                            id=_gen_id(), about_edge=edge, old_value=pred, new_value=switches[0]
+                            id=_gen_id(),
+                            about_edge=edge,
+                            old_value=pred,
+                            new_value=switches[0],
                         )
                 else:
-                    yield kgcl.EdgeDeletion(id=_gen_id(), subject=e1, predicate=pred, object=filler)
+                    yield kgcl.EdgeDeletion(
+                        id=_gen_id(), subject=e1, predicate=pred, object=filler
+                    )
             for rel in e2_rels.difference(e1_rels):
                 pred, filler = rel
                 edge = kgcl.Edge(subject=e1, predicate=pred, object=filler)
-                yield kgcl.NodeMove(id=_gen_id(), about_edge=edge, old_value=pred)
-        logging.info(f"Comparing {len(other_ontology_entities)} terms in other ontology")
+                switches = list({r[1] for r in e1_rels if r[0] == pred})
+                if pred == vocabulary.RDF_TYPE and len(switches) == 0:
+                    pass
+                elif pred == vocabulary.SUBCLASS_OF or pred == vocabulary.IS_A:
+                    switches = list(
+                        {r[1] for r in e1_rels if r[0] == pred}
+                    )  # date back old ontology and find out old subject by changed (pred, obj)
+                    old_object = switches[0]
+                    new_object = filler
+                    yield kgcl.NodeMove(
+                        id=_gen_id(),
+                        subject=e1,
+                        old_object_type=old_object,
+                        new_object_type=new_object,
+                    )
+                else:
+                    yield kgcl.EdgeCreation(
+                        id=_gen_id(), subject=e1, predicate=pred, object=filler
+                    )
+        logging.info(
+            f"Comparing {len(other_ontology_entities)} terms in other ontology"
+        )
         for e2 in other_ontology_entities:
             logging.debug(f"Comparing e2 {e2}")
             if e2 not in self_entities:
