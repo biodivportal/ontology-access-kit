@@ -129,6 +129,7 @@ class DifferInterface(BasicOntologyInterface, ABC):
                                 )
                         else:
                             yield kgcl.NodeObsoletion(id=_gen_id(), about_node=e1)
+            
             # Check for definition change/addition
             if self.definition(e1) != other_ontology.definition(e1):
                 if self.definition(e1) is None or other_ontology.definition(e1) is None:
@@ -139,11 +140,26 @@ class DifferInterface(BasicOntologyInterface, ABC):
                     if other_ontology.definition(e1):
                         new_value = other_ontology.definition(e1)
 
-                    yield NewTextDefinition(
-                        id=_gen_id(), about_node=e1, new_value=new_value, old_value=old_value
-                    )
-                elif self.definition(e1) is not None and other_ontology.definition(e1) is not None:
-                    yield NodeTextDefinitionChange(
+                    if self.definition(e1) is None:
+                        yield NewTextDefinition(
+                            id=_gen_id(),
+                            about_node=e1,
+                            new_value=new_value,
+                            old_value=old_value,
+                        )
+                    elif other_ontology.definition(e1) is None:
+                        yield kgcl.RemoveTextDefinition(
+                            id=_gen_id(),
+                            about_node=e1,
+                            new_value=new_value,
+                            old_value=old_value,
+                        )
+
+                elif (
+                    self.definition(e1) is not None
+                    and other_ontology.definition(e1) is not None
+                ):
+                    yield kgcl.TextDefinitionReplacement(
                         id=_gen_id(),
                         about_node=e1,
                         new_value=other_ontology.definition(e1),
