@@ -286,13 +286,17 @@ class DifferInterface(BasicOntologyInterface, ABC):
         logging.info(
             f"Comparing {len(other_ontology_entities)} terms in other ontology"
         )
+        # Chunk about Node Creation
         for e2 in other_ontology_entities:
             logging.debug(f"Comparing e2 {e2}")
             if e2 not in self_entities:
                 e2_types = other_ontology.owl_type(e2)
                 is_class = OWL_CLASS in e2_types
+                is_property = OWL_OBJECT_PROPERTY in e2_types
                 if is_class:
                     yield ClassCreation(id=_gen_id(), about_node=e2)
+                elif is_property:
+                    yield kgcl.ObjectPropertyCreation(id=_gen_id(), about_node=e2)
                 else:
                     yield NodeCreation(id=_gen_id(), about_node=e2)
                 continue
