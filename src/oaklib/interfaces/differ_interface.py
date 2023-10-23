@@ -202,6 +202,7 @@ class DifferInterface(BasicOntologyInterface, ABC):
                             change_2={'NewSynonym':kgcl_NewSynonym.id}, 
                             )
 
+            # Chunk for changes about edge
             e1_rels = set(self.outgoing_relationships(e1))
             e2_rels = set(other_ontology.outgoing_relationships(e1))
             for rel in e1_rels.difference(e2_rels):
@@ -219,8 +220,18 @@ class DifferInterface(BasicOntologyInterface, ABC):
             for rel in e2_rels.difference(e1_rels):
                 pred, filler = rel
                 edge = kgcl.Edge(subject=e1, predicate=pred, object=filler)
-                yield kgcl.NodeMove(id=_gen_id(), about_edge=edge, old_value=pred)
+                switches = list({r[1] for r in e1_rels if r[0] == pred})
+                if pred == vocabulary.RDF_TYPE and len(switches)==0:
+                    pass
+                elif pred == vocabulary.SUBCLASS_OF or pred == vocabulary.IS_A:
+                    switches = list({r[1] for r in e1_rels if r[0] == pred})
+                    old_object = switches[0]
+                    new_object = filler
+                    yield kgcl.NodeMove(id=_gen_id(), subject=e1, old_object_type=old_object, new_object_type=new_object)
+                else:
+                    yield kgcl.EdgeCreation(id=_gen_id(), subject=e1, predicate=pred, object=filler)
         logging.info(f"Comparing {len(other_ontology_entities)} terms in other ontology")
+
         for e2 in other_ontology_entities:
             logging.debug(f"Comparing e2 {e2}")
             if e2 not in self_entities:
