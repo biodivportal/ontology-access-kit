@@ -149,29 +149,59 @@ class DifferInterface(BasicOntologyInterface, ABC):
                 else:
                     logging.info(f"Both ontologies have no definition for {e1}")
 
+            # Check changes about synonym and node rename
             differs = self.different_from(e1, other_ontology)
             if differs is not None and not differs:
                 continue
             e1_arels = set(self.alias_relationships(e1, exclude_labels=True))
             e2_arels = set(other_ontology.alias_relationships(e1, exclude_labels=True))
+            e1_label = self.label(e1)
+            e2_label = other_ontology.label(e1)
+            replacement_flag = False
             for arel in e1_arels.difference(e2_arels):
                 pred, alias = arel
                 switches = {r[0] for r in e2_arels if r[1] == alias}
+                alias1_same_pred = {r[1] for r in e1_arels if r[0]==pred}
+                alias2_same_pred = {r[1] for r in e2_arels if r[0]==pred}
+                new_alias = alias2_same_pred.difference(alias1_same_pred)
+                old_alias = alias1_same_pred.difference(alias2_same_pred)
                 if len(switches) == 1:
                     e2_arels = set([x for x in e2_arels if x[1] != alias])
                     # TODO: KGCL model needs to include predicates
-                    yield kgcl.SynonymPredicateChange(id=_gen_id(), about_node=e1, old_value=alias)
-                else:
+                    yield kgcl.SynonymPredicateChange(id=_gen_id(), about_node=e1, old_value=alias,)
+                elif len(new_alias) == 1 and len(old_alias) == 1:
+                    replacement_flag = True
+                else:                        
                     yield kgcl.RemoveSynonym(id=_gen_id(), about_node=e1, old_value=alias)
+                    
+            NodeRename_flag = False
+            if e1_label != e2_label:
+                NodeRename_flag = True
+                kgcl_NodeRename = kgcl.NodeRename(
+                    id=_gen_id(), about_node=e1, old_value=e1_label, new_value=e2_label
+                    )
+                yield kgcl_NodeRename
             for arel in e2_arels.difference(e1_arels):
                 pred, alias = arel
-                yield kgcl.NewSynonym(id=_gen_id(), about_node=e1, new_value=alias)
-            e1_label = self.label(e1)
-            e2_label = other_ontology.label(e1)
-            if e1_label != e2_label:
-                yield kgcl.NodeRename(
-                    id=_gen_id(), about_node=e1, old_value=e1_label, new_value=e2_label
-                )
+                alias_from_name = {a[1] for a in e2_arels if a[1] == e1_label} # Check whether old name becomes new alias
+                alias1_same_pred = {r[1] for r in e1_arels if r[0]==pred}
+                alias2_same_pred = {r[1] for r in e2_arels if r[0]==pred}
+                new_alias = alias2_same_pred.difference(alias1_same_pred)
+                old_alias = alias1_same_pred.difference(alias2_same_pred)
+                if replacement_flag==True and len(new_alias)==1 and len(old_alias)==1:
+                    old_alias_output = ', '.join(old_alias)
+                    new_alias_output = ', '.join(new_alias)
+                    yield kgcl.SynonymReplacement(id=_gen_id(), about_node=e1, old_value=old_alias_output, new_value=new_alias_output)
+                else:
+                    kgcl_NewSynonym = kgcl.NewSynonym(id=_gen_id(), about_node=e1, new_value=alias)
+                    yield kgcl_NewSynonym
+                    if NodeRename_flag and len(alias_from_name)!=0:
+                        yield kgcl.NameBecomesSynonym(
+                            id=_gen_id(), about_node=e1, new_value=kgcl_NodeRename.new_value,
+                            change_1={'NodeRename':kgcl_NodeRename.id}, 
+                            change_2={'NewSynonym':kgcl_NewSynonym.id}, 
+                            )
+
             e1_rels = set(self.outgoing_relationships(e1))
             e2_rels = set(other_ontology.outgoing_relationships(e1))
             for rel in e1_rels.difference(e2_rels):
