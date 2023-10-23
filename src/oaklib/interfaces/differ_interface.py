@@ -13,10 +13,12 @@ from kgcl_schema.datamodel.kgcl import (
     NodeTextDefinitionChange,
 )
 
+import oaklib.datamodels.vocabulary as vocabulary
 from oaklib.datamodels.vocabulary import (
     DEPRECATED_PREDICATE,
     HAS_OBSOLESCENCE_REASON,
     OWL_CLASS,
+    OWL_OBJECT_PROPERTY,
     TERM_REPLACED_BY,
     TERMS_MERGED,
 )
@@ -72,15 +74,14 @@ class DifferInterface(BasicOntologyInterface, ABC):
         """
         if configuration is None:
             configuration = DiffConfiguration()
+        # Check for Node deletion and obsoletion
         other_ontology_entities = set(list(other_ontology.entities(filter_obsoletes=False)))
         self_entities = set(list(self.entities(filter_obsoletes=False)))
         logging.info(f"Comparing {len(self_entities)} terms in this ontology")
         for e1 in self_entities:
-            # e1_types = self.owl_type(e1)
-            # is_class = OWL_CLASS in e1_types
             logging.debug(f"Comparing e1 {e1}")
             if e1 not in other_ontology_entities:
-                yield NodeDeletion(id=_gen_id(), about_node=e1)
+                yield kgcl.ClassDeletion(id=_gen_id(), about_node=e1)
                 continue
             if configuration.simple:
                 continue
@@ -110,6 +111,7 @@ class DifferInterface(BasicOntologyInterface, ABC):
                                 )
                         else:
                             yield kgcl.NodeObsoletion(id=_gen_id(), about_node=e1)
+                            
             # Check for definition change/addition
             if self.definition(e1) != other_ontology.definition(e1):
                 if self.definition(e1) is None or other_ontology.definition(e1) is None:
