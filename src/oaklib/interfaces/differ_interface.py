@@ -12,6 +12,7 @@ from kgcl_schema.datamodel.kgcl import (
     ClassCreation,
     Edge,
     EdgeDeletion,
+    EdgeCreation,
     MappingCreation,
     # MappingReplacement,
     MappingPredicateChange,
@@ -40,6 +41,9 @@ from oaklib.datamodels.vocabulary import (  # OIO_SYNONYM_TYPE_PROPERTY,
     OWL_CLASS,
     TERM_REPLACED_BY,
     TERMS_MERGED,
+    RDF_TYPE,
+    SUBCLASS_OF,
+    IS_A
 )
 from oaklib.interfaces.basic_ontology_interface import BasicOntologyInterface
 from oaklib.types import CURIE, PRED_CURIE
@@ -562,6 +566,16 @@ def _generate_relation_changes(e1, self_out_rels, other_out_rels) -> List[Change
         pred, alias = rel
         edge = Edge(subject=e1, predicate=pred, object=alias)
         change = NodeMove(id=_gen_id(), about_edge=edge)
+        switches = list({r[1] for r in e1_rels if r[0] == pred})
+        if pred == RDF_TYPE and len(switches)==0:
+            pass
+        elif pred == SUBCLASS_OF or pred == IS_A:
+            switches = list({r[1] for r in e1_rels if r[0] == pred})
+            old_object = switches[0]
+            new_object = alias
+            change = NodeMove(id=_gen_id(), subject=e1, old_object_type=old_object, new_object_type=new_object)
+        else:
+            change = EdgeCreation(id=_gen_id(), subject=e1, predicate=pred, object=alias)
         changes.append(change)
 
     return changes
