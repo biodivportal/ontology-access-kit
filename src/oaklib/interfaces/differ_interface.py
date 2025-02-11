@@ -24,6 +24,7 @@ from kgcl_schema.datamodel.kgcl import (
     NodeObsoletion,
     NodeObsoletionWithDirectReplacement,
     NodeRename,
+    TextDefinitionReplacement,
     NodeTextDefinitionChange,
     NodeUnobsoletion,
     PredicateChange,
@@ -235,7 +236,7 @@ class DifferInterface(BasicOntologyInterface, ABC):
             old_value = self.definition(entity)
             new_value = other_ontology.definition(entity)
             if old_value != new_value and old_value is not None and new_value is not None:
-                change = NodeTextDefinitionChange(
+                change = TextDefinitionReplacement(
                     id=_gen_id(),
                     about_node=entity,
                     new_value=new_value,
