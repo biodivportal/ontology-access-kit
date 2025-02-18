@@ -2699,14 +2699,6 @@ is_transitive: true
 is_a: temporally_related_to ! temporally related to
 
 [Typedef]
-id: process_has_causal_agent
-name: process has causal agent
-namespace: external
-def: "Inverse of 'causal agent in process'" []
-xref: RO:0002608
-is_a: causally_related_to ! causally related to
-
-[Typedef]
 id: regulated_by
 name: regulated by
 namespace: external
