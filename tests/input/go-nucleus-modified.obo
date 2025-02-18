@@ -376,7 +376,7 @@ subset: goslim_plant
 subset: goslim_yeast
 synonym: "cell or subcellular entity" EXACT []
 synonym: "cellular component" EXACT []
-synonym: "subcellular entity" RELATED [NIF_Subcellular:nlx_subcell_100315]
+synonym: "sub-cellular entity" RELATED [NIF_Subcellular:nlx_subcell_100315]
 is_a: BFO:0000040 ! material entity
 disjoint_from: GO:0008150 ! biological_process
 
@@ -762,7 +762,7 @@ creation_date: 2014-03-06T11:37:54Z
 id: GO:0016301
 name: kinase activity
 namespace: molecular_function
-def: "Catalysis of the transfer of a phosphate group, usually from ATP, to a substrate molecule." [ISBN:0198506732]
+def: "Catalysis of the transfer of a phosphate group, usually from ATP, to a substrate molecule. This term encompasses all activities that transfer a single phosphate group." [ISBN:0198506732]
 comment: Note that this term encompasses all activities that transfer a single phosphate group; although ATP is by far the most common phosphate donor, reactions using other phosphate donors are included in this term.
 subset: goslim_chembl
 subset: goslim_drosophila
@@ -1808,7 +1808,7 @@ union_of: NCBITaxon:554915 ! Amoebozoa
 [Term]
 id: NCBITaxon_Union:0000025
 name: Archaea or Eukaryota
-synonym: "archaea-eukaryota" EXACT []
+synonym: "archaea + eukaryota" EXACT []
 is_a: NCBITaxon:131567 ! cellular organisms
 union_of: NCBITaxon:2157 ! Archaea
 union_of: NCBITaxon:2759 ! Eukaryota
@@ -2137,16 +2137,6 @@ is_a: directly_regulates ! directly regulates
 is_a: negatively_regulates ! negatively regulates
 
 [Typedef]
-id: directly_negatively_regulates_activity_of
-name: directly negatively regulates activity of
-def: "The entity A, immediately upstream of the entity B, has an activity that negatively regulates an activity performed by B. \nFor example, A and B may be gene products and binding of B by A negatively regulates the kinase activity of B." []
-synonym: "molecularly decreases activity of" EXACT []
-xref: RO:0002449
-domain: BFO:0000040 ! material entity
-range: BFO:0000040 ! material entity
-is_a: directly_regulates_activity_of ! directly regulates activity of
-
-[Typedef]
 id: directly_positively_regulated_by
 name: directly positively regulated by
 def: "Process(P2) is directly postively regulated by process(P1) iff: P1 positively regulates P2 via direct physical interaction between an agent executing P1 (or some part of P1) and an agent executing P2 (or some part of P2).  For example, if protein A has protein binding activity(P1) that targets protein B and this binding positively regulates the kinase activity (P2) of protein B then P2 is directly postively regulated by P1." []
@@ -2161,16 +2151,6 @@ def: "Process(P1) directly postively regulates process(P2) iff: P1 positively re
 xref: RO:0002629
 is_a: directly_regulates ! directly regulates
 is_a: positively_regulates ! positively regulates
-
-[Typedef]
-id: directly_positively_regulates_activity_of
-name: directly positively regulates activity of
-def: "The entity A, immediately upstream of the entity B, has an activity that positively regulates an activity performed by B. \nFor example, A and B may be gene products and binding of B by A positively regulates the kinase activity of B." []
-synonym: "molecularly increases activity of" EXACT []
-xref: RO:0002450
-domain: BFO:0000040 ! material entity
-range: BFO:0000040 ! material entity
-is_a: directly_regulates_activity_of ! directly regulates activity of
 
 [Typedef]
 id: directly_regulated_by
