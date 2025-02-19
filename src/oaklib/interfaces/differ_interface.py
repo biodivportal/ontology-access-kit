@@ -10,6 +10,7 @@ from kgcl_schema.datamodel.kgcl import (
     AddNodeToSubset,
     Change,
     ClassCreation,
+    ObjectPropertyCreation,
     Edge,
     EdgeDeletion,
     MappingCreation,
@@ -38,6 +39,7 @@ from oaklib.datamodels.vocabulary import (  # OIO_SYNONYM_TYPE_PROPERTY,
     DEPRECATED_PREDICATE,
     HAS_OBSOLESCENCE_REASON,
     OWL_CLASS,
+    OWL_OBJECT_PROPERTY,
     TERM_REPLACED_BY,
     TERMS_MERGED,
 )
@@ -159,12 +161,12 @@ class DifferInterface(BasicOntologyInterface, ABC):
         logger.info("finding Creations")
         for entity in created_entities:
             types = other_ontology.owl_type(entity)
-            if OWL_CLASS in types:
+            is_class = OWL_CLASS in types
+            is_property = OWL_OBJECT_PROPERTY in types
+            if is_class:
                 yield ClassCreation(id=_gen_id(), about_node=entity)
-            # elif OIO_SYNONYM_TYPE_PROPERTY in types:
-            #     yield NodeCreation(
-            #         id=_gen_id(), about_node=OIO_SYNONYM_TYPE_PROPERTY
-            #     )
+            elif is_property:
+                yield ObjectPropertyCreation(id=_gen_id(), about_node=entity)
             else:
                 yield NodeCreation(id=_gen_id(), about_node=entity)
 
