@@ -35,6 +35,7 @@ from kgcl_schema.datamodel.kgcl import (
 )
 
 from oaklib.datamodels.vocabulary import (  # OIO_SYNONYM_TYPE_PROPERTY,
+    OWL_OBJECT_PROPERTY,
     DEPRECATED_PREDICATE,
     HAS_OBSOLESCENCE_REASON,
     OWL_CLASS,
@@ -173,7 +174,15 @@ class DifferInterface(BasicOntologyInterface, ABC):
 
         if nodes_to_delete:
             for node in nodes_to_delete:
-                yield NodeDeletion(id=_gen_id(), about_node=node)
+                node_types = self.owl_type(node)
+                is_class = OWL_CLASS in node_types
+                is_property = OWL_OBJECT_PROPERTY in node_types
+                if is_class:
+                    yield kgcl.ClassDeletion(id=_gen_id(), about_node=node)
+                elif is_property:
+                    yield kgcl.ObjectPropertyDeletion(id=_gen_id(), about_node=node)
+                else:
+                    yield NodeDeletion(id=_gen_id(), about_node=node, change_description=node_types)
 
         logger.info("finding Obsoletions")
         other_ontology_entities_with_obsoletes = set(
